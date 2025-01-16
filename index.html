@@ -16,6 +16,7 @@
             display: flex;
             gap: 10px;
             align-items: center;
+            flex-wrap: wrap;
         }
         
         button, select {
@@ -39,19 +40,6 @@
             color: #c9d1d9;
         }
         
-        .color-option {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .color-preview {
-            width: 15px;
-            height: 15px;
-            border-radius: 2px;
-            display: inline-block;
-        }
-
         .grid-container {
             display: flex;
             align-items: flex-start;
@@ -120,6 +108,20 @@
             <option value="4">Brightest Green</option>
         </select>
         <button onclick="applyFill()">Apply Fill</button>
+        
+        <!-- Pattern controls -->
+        <select id="patternSelect">
+            <option value="">Select pattern...</option>
+            <option value="wave">Wave</option>
+            <option value="stars">Stars</option>
+            <option value="heart">Heart</option>
+            <option value="checkerboard">Checkerboard</option>
+            <option value="stripes">Stripes</option>
+            <option value="diamond">Diamond</option>
+            <option value="zigzag">Zigzag</option>
+        </select>
+        <button onclick="applyPattern()">Apply Pattern</button>
+        
         <button onclick="generateScript()">Generate Script</button>
         <button onclick="copyScript()">Copy to Clipboard</button>
         <button onclick="downloadScript()">Download Script</button>
@@ -156,6 +158,120 @@
                 '#39d353'
             ];
             return colors[clicks];
+        }
+        
+        // Pattern generation function
+        function applyPattern() {
+            const pattern = document.getElementById('patternSelect').value;
+            if (!pattern) return;
+            
+            // Reset grid
+            grid = Array(rows).fill().map(() => Array(cols).fill(0));
+            
+            switch(pattern) {
+                case 'wave':
+                    for (let col = 0; col < cols; col++) {
+                        const row = Math.floor(3 + Math.sin(col * 0.5) * 2);
+                        if (row >= 0 && row < rows) {
+                            grid[row][col] = 3;
+                        }
+                    }
+                    break;
+                    
+                case 'stars':
+                    const starPositions = [
+                        [1, 5], [5, 5], [3, 10],
+                        [2, 15], [4, 15], [1, 20],
+                        [5, 20], [3, 25], [2, 30],
+                        [4, 30], [1, 35], [5, 35]
+                    ];
+                    
+                    starPositions.forEach(([row, col]) => {
+                        if (col < cols && row < rows) {
+                            grid[row][col] = 4;
+                            // Add surrounding pixels
+                            if (row > 0) grid[row-1][col] = 2;
+                            if (row < rows-1) grid[row+1][col] = 2;
+                            if (col > 0) grid[row][col-1] = 2;
+                            if (col < cols-1) grid[row][col+1] = 2;
+                        }
+                    });
+                    break;
+                    
+                case 'heart':
+                    const heart = [
+                        [0,4,4,0,4,4,0],
+                        [4,4,4,4,4,4,4],
+                        [4,4,4,4,4,4,4],
+                        [0,4,4,4,4,4,0],
+                        [0,0,4,4,4,0,0],
+                        [0,0,0,4,0,0,0]
+                    ];
+                    
+                    const startCol = Math.floor(cols/2) - Math.floor(heart[0].length/2);
+                    heart.forEach((row, rowIndex) => {
+                        row.forEach((val, colIndex) => {
+                            if (rowIndex < rows && (startCol + colIndex) < cols) {
+                                grid[rowIndex][startCol + colIndex] = val;
+                            }
+                        });
+                    });
+                    break;
+                    
+                case 'checkerboard':
+                    for (let row = 0; row < rows; row++) {
+                        for (let col = 0; col < cols; col++) {
+                            if ((row + col) % 2 === 0) {
+                                grid[row][col] = 2;
+                            }
+                        }
+                    }
+                    break;
+
+                // New pattern: Stripes
+                case 'stripes':
+                    for (let col = 0; col < cols; col++) {
+                        if (col % 3 === 0) {
+                            for (let row = 0; row < rows; row++) {
+                                grid[row][col] = 3;
+                            }
+                        }
+                    }
+                    break;
+
+                // New pattern: Diamond
+                case 'diamond':
+                    const centerRow = Math.floor(rows/2);
+                    const centerCol = Math.floor(cols/2);
+                    const size = 10;
+                    
+                    for (let row = 0; row < rows; row++) {
+                        for (let col = 0; col < cols; col++) {
+                            const distance = Math.abs(row - centerRow) + Math.abs(col - centerCol);
+                            if (distance < size) {
+                                grid[row][col] = 4 - Math.floor(distance/2);
+                            }
+                        }
+                    }
+                    break;
+
+                // New pattern: Zigzag
+                case 'zigzag':
+                    let currentRow = 0;
+                    let direction = 1;
+                    
+                    for (let col = 0; col < cols; col++) {
+                        grid[currentRow][col] = 3;
+                        currentRow += direction;
+                        
+                        if (currentRow >= rows - 1 || currentRow <= 0) {
+                            direction *= -1;
+                        }
+                    }
+                    break;
+            }
+            
+            updateGrid();
         }
         
         function applyFill() {
@@ -278,8 +394,4 @@
             URL.revokeObjectURL(url);
         }
         
-        document.getElementById('year').addEventListener('change', updateGrid);
-        initGrid();
-    </script>
-</body>
-</html>
+        document.getElementById('year').addEventListener('change', updateGrid)
